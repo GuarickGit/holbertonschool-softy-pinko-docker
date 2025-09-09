@@ -1,0 +1,19 @@
+services:        # Déclaration des services (conteneurs) de l'application
+
+  back-end:      # Service API (Flask)
+    build:                 # Construction de l'image depuis un Dockerfile local
+      context: ./back-end  # Répertoire visible pendant le build (contient api.py et le Dockerfile du back)
+      dockerfile: Dockerfile  # Fichier Dockerfile utilisé pour ce service (dans ./back-end)
+    image: softy-pinko-back-end:task4  # Nom/tag de l'image produite pour le back
+    ports:
+      - "5252:5252"             # Port interne rendu accessible aux autres services (front → back sur 5252)
+
+  front-end:     # Service front (nginx)
+    build:
+      context: ./front-end     # Répertoire visible pendant le build (conf nginx et assets)
+      dockerfile: Dockerfile   # Fichier Dockerfile utilisé pour le front (dans ./front-end)
+    image: softy-pinko-front-end:task4  # Nom/tag de l'image produite pour le front
+    ports:
+      - "9000:9000"              # Publication du port : hôte 8080 → conteneur 80 (accès via http://localhost:8080)
+    depends_on:
+      - back-end               # Le front dépend du back (démarrage dans cet ordre)
