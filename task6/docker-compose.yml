@@ -1,0 +1,36 @@
+services:        # Déclaration des services (conteneurs) de l'application
+
+  back-end:      # Service API (Flask)
+    build:                 # Construction de l'image depuis un Dockerfile local
+      context: ./back-end  # Répertoire visible pendant le build (contient api.py et le Dockerfile du back)
+      dockerfile: Dockerfile  # Fichier Dockerfile utilisé pour ce service (dans ./back-end)
+    image: softy-pinko-back-end:task4  # Nom/tag de l'image produite pour le back
+    # ⚠️ Pas de "ports" exposés → ce service n'est accessible qu'en interne via le réseau Docker
+    # Le proxy pourra y accéder avec "http://back-end:5252"
+
+
+  front-end:     # Service front (nginx)
+    build:
+      context: ./front-end     # Répertoire visible pendant le build (conf nginx et assets)
+      dockerfile: Dockerfile   # Fichier Dockerfile utilisé pour le front (dans ./front-end)
+    image: softy-pinko-front-end:task4  # Nom/tag de l'image produite pour le front
+    depends_on:
+      - back-end               # Le front dépend du back (démarrage dans cet ordre)
+    # ⚠️ Pas de "ports" exposés → ce service n'est accessible qu'en interne via le réseau Docker
+    # Le proxy pourra y accéder avec "http://front-end:9000"
+
+
+  proxy:        # Service proxy (Nginx) qui fait office de point d'entrée unique
+    build:
+      context: ./proxy       # Répertoire utilisé pendant le build (contient Dockerfile + proxy.conf)
+      dockerfile: Dockerfile
+    image: softy-pinko-proxy:task5
+    ports:
+      - "80:80"              # Expose le port 80 du conteneur sur le port 80 de l’hôte
+                             # 👉 Le navigateur client se connecte uniquement à http://localhost
+    depends_on:
+      - front-end            # Le proxy dépend du front (doit démarrer après lui)
+      - back-end             # Le proxy dépend aussi du back
+    # 👉 Le proxy redirigera les requêtes :
+    #     - "/"      → vers front-end:9000
+    #     - "/api"   → vers back-end:5252
